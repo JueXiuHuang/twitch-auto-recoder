@@ -1,0 +1,7 @@
+streamer_name=xqc
+client_id=your_client_id_here
+client_secret=your_client_secret_code_here
+delay=10
+browser_path=./chromedriver.exe
+twitch_url=https://www.twitch.tv/xqc
+obs_port=4444

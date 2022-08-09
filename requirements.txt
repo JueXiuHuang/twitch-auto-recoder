@@ -1,0 +1,3 @@
+simpleobsws
+requests
+selenium
