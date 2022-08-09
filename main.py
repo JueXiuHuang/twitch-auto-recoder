@@ -29,6 +29,7 @@ options = Options()
 options.add_extension('./uBlock-Origin.crx')
 options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
 browser = webdriver.Chrome('./chromedriver.exe', options=options)
+browser.maximize_window()
 
 def check_onlline(configs):
   # get Authorization token
@@ -55,10 +56,11 @@ def check_onlline(configs):
   
   if len(result['data']) != 0:
     print('Online')
-    return True
+    is_mature = result['data'][0]['is_mature']
+    return True, is_mature
   else:
     print('Offline')
-    return False
+    return False, False
 
 async def make_obs_request(request_str):
   await ws.connect()
@@ -72,31 +74,58 @@ async def make_obs_request(request_str):
   else:
     print(ret)
 
-def open_browser():
+def open_browser(is_mature):
   browser.get(configs['twitch_url'])
 
-  full_screen_btn = WebDriverWait(browser, 60, 0.5).until(EC.presence_of_element_located((By.CSS_SELECTOR,
-                          '#channel-player > div > \
-                          div.Layout-sc-nxg1ff-0.dIyPHK.player-controls__right-control-group > \
-                          div:nth-child(6) > button')))
+  if is_mature:
+    print('Stream contains mature.')
+    start_watch_btn = WebDriverWait(browser, 60, 0.5)\
+                        .until(EC.presence_of_element_located((By.XPATH,
+                          '//*[@id="root"]/div/div[2]/div/main/div[1]/\
+                          div[3]/div/div/div[2]/div/div[2]/div/div[2]/div\
+                          /div/div[7]/div/div[3]/button')))
+    start_watch_btn.click()
 
-  full_screen_btn.click()
+  try:
+    theatre_btn = WebDriverWait(browser, 60, 0.5)\
+                        .until(EC.presence_of_element_located((By.XPATH,
+                          '//*[@id="channel-player"]/div/div[2]/div[4]/button')))
+    theatre_btn.click()
+  except:
+    print('No theatre mode.')
+
+  try:
+    fold_chat_btn = WebDriverWait(browser, 60, 0.5)\
+                      .until(EC.presence_of_element_located((By.XPATH,
+                            "//*[@aria-label='Collapse Chat']")))
+    fold_chat_btn.click()
+  except:
+    print('No fold btn.')
+
+  try:
+    side_btn = browser.find_element(By.XPATH,
+                        "//*[@aria-label='Collapse Side Nav']")
+    side_btn.click()
+  except:
+    print('No side nav.')
+
+  
   
   voice_btn = WebDriverWait(browser, 60, 0.5).until(EC.presence_of_element_located((By.XPATH,
                           "//*[@id='channel-player']/div/div[1]/div[2]/div/div[1]/button")))
   try:
     getMute = browser.find_element(By.XPATH, "//*[@aria-label='Unmute (m)']")
     voice_btn.click()
-    print('unmute')
+    print('Unmute.')
   except:
-    print('no mute')
+    print('No mute.')
 
 while True:
-  is_online = check_onlline(configs)
+  is_online, is_mature = check_onlline(configs)
   obs_recording = loop.run_until_complete(make_obs_request('GetRecordStatus'))['outputActive']
   
   if is_online and not obs_recording:
-    open_browser()
+    open_browser(is_mature)
     loop.run_until_complete(make_obs_request('StartRecord'))
   elif not is_online and obs_recording:
     loop.run_until_complete(make_obs_request('StopRecord'))
