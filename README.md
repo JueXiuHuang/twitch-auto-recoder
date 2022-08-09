@@ -9,4 +9,4 @@
 
 3. install OBS and obs-websocket according to your OBS version
 
-4. run code with `python main.py`
+4. run code with `python main.py`, you need to run program with OBS opened
